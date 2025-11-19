@@ -19,6 +19,141 @@
     return semi>comma?';':',';
   }
 
+  // Helper: open Agenda inline from topbar, fallback to standalone. Return false to prevent navigation.
+  try{ window.openAgendaFromTop = function(){
+    try{
+      var wrap = document.getElementById('wrap');
+      // Create #wrap if missing so inline can render
+      if(!wrap){
+        try{
+          wrap = document.createElement('div');
+          wrap.id = 'wrap';
+          document.body.appendChild(wrap);
+        }catch(_){ }
+      }
+      if(wrap){
+        try{ inlineOpenAgenda('/preventivatore/mirror/agenda'); return false; }catch(_){ }
+      }
+    }catch(_){ }
+    try{ window.location.href='/preventivatore/mirror/agenda.html'; }catch(_){ }
+    return false;
+  }; }catch(_){ }
+
+  // Build inline Agenda view into #wrap directly
+  function inlineOpenAgenda(url){
+    try{
+      var wrap = document.getElementById('wrap');
+      if(!wrap){ var d=document.createElement('div'); d.id='wrap'; document.body.appendChild(d); wrap=d; }
+      var v = 'inline-'+Date.now();
+      var header = ''+
+        '<section class="section-bg title">'+
+        '  <div class="title-wrap">'+
+        '    <a class="sidenav-trigger hide_please" data-target="sidenav" href="#"><i class="material-icons menu-icon">menu</i></a>'+
+        '    <a class="hide_please home-link" href="#">'+
+        '      <img alt="" class="page-title-logo" src="/logo.png" title="">'+
+        '    </a>'+
+        '    <h1 class="padding-container">Agenda</h1>'+
+        '  </div>'+
+        '</section>';
+      var content = ''+
+        '<section class="section padding-container white-bg">'+
+        '  <div class="row">'+
+        '    <div class="col s12">'+
+        '      <iframe src="'+url+(url.indexOf('?')>-1?'&':'?')+'v='+v+'" style="width:100%;height:85vh;border:0;border-radius:8px;background:#fff;"></iframe>'+
+        '    </div>'+
+        '  </div>'+
+        '</section>';
+      wrap.innerHTML = header + content;
+      try{ window.scrollTo({top:0, behavior:'smooth'}); }catch(_){ }
+    }catch(_){ }
+  }
+
+  // Observe top navigation and re-ensure the Agenda button next to 'Esci'
+  function setupTopbarObservers(){
+    try{
+      if(!window.MutationObserver) return;
+      var top = document.getElementById('top_nav');
+      if(top){
+        try{
+          if(!top.__agendaTopObs){
+            top.__agendaTopObs = new MutationObserver(function(){ ensureTopbarAgenda(); });
+            top.__agendaTopObs.observe(top, { childList:true, subtree:true });
+          }
+        }catch(_){ }
+      }
+      if(!document.__agendaTopRootObs){
+        document.__agendaTopRootObs = new MutationObserver(function(muts){
+          try{
+            var hasNewTop = false;
+            muts.forEach(function(m){
+              m.addedNodes && m.addedNodes.forEach(function(n){ if(n && n.nodeType===1 && (n.id==='top_nav' || (n.querySelector && n.querySelector('#top_nav')))) hasNewTop=true; });
+            });
+            if(hasNewTop){ ensureTopbarAgenda(); setupTopbarObservers(); }
+          }catch(_){ }
+        });
+        document.__agendaTopRootObs.observe(document.documentElement || document.body, { childList:true, subtree:true });
+      }
+    }catch(_){ }
+  }
+
+  // Floating fallback button: always visible near top-right (left of Esci)
+  function ensureFloatingAgenda(){
+    try{
+      if(document.getElementById('floating-agenda-btn')) return;
+      var btn = document.createElement('a');
+      btn.id = 'floating-agenda-btn';
+      btn.href = '#';
+      btn.textContent = 'Agenda';
+      btn.style.position = 'fixed';
+      btn.style.top = '12px';
+      btn.style.right = '110px';
+      btn.style.zIndex = '9999';
+      btn.style.background = '#1976d2';
+      btn.style.color = '#fff';
+      btn.style.padding = '6px 10px';
+      btn.style.borderRadius = '14px';
+      btn.style.fontSize = '13px';
+      btn.style.boxShadow = '0 2px 6px rgba(0,0,0,.2)';
+      btn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation();
+        var ok = (window.wireAgendaInlineOpen && document.getElementById('wrap')) ? (function(){
+          var tmp = document.createElement('a'); tmp.setAttribute('href', '/preventivatore/mirror/agenda'); tmp.dataset.agendaUrl = '/preventivatore/mirror/agenda'; return window.wireAgendaInlineOpen(tmp);
+        })() : false;
+        if(!ok){ try{ window.location.href='/preventivatore/mirror/agenda.html'; }catch(_){ } }
+      }, true);
+      document.body.appendChild(btn);
+    }catch(_){ }
+  }
+
+  // Ensure an 'Agenda' button in the top navigation, left of 'Esci'
+  function ensureTopbarAgenda(){
+    try{
+      // Find top UL container
+      var top = document.getElementById('top_nav') || document.querySelector('nav .nav-wrapper ul') || document.querySelector('ul#top_nav');
+      if(!top) return;
+      if(top.querySelector('li.top-agenda')) return;
+      // Locate the 'Esci' LI using multiple strategies
+      var esciLi = null;
+      esciLi = top.querySelector('li.hide-mobile.esci.right-li') || esciLi;
+      if(!esciLi){
+        var esciA = top.querySelector('a[href="/preventivatore/mirror/"]');
+        if(esciA){ esciLi = esciA.closest('li'); }
+      }
+      if(!esciLi){
+        var icon = Array.from(top.querySelectorAll('i.material-icons')).find(function(i){ return (i.textContent||'').trim()==='logout'; });
+        if(icon){
+          var a = icon.closest('a');
+          esciLi = (a && a.closest('li')) || icon.closest('li');
+        }
+      }
+      // Build Agenda item
+      var li = document.createElement('li'); li.className = 'top-agenda right-li'; li.style.cssText = 'float:right;';
+      var a = document.createElement('a'); a.href = '/preventivatore/mirror/agenda-page.html'; a.innerHTML = '<i class="material-icons">event</i><span>Agenda</span>';
+      li.appendChild(a);
+      if(esciLi && esciLi.parentNode){ esciLi.parentNode.insertBefore(li, esciLi); }
+      else { top.appendChild(li); }
+    }catch(_){ }
+  }
+
   try{ window.ensureAgendaLink = ensureAgendaLink; }catch(_){ }
   try{ window.wireAgendaInline = wireAgendaInline; }catch(_){ }
   function splitCSVLine(line, delim){ var res=[], cur='', inq=false; for(var i=0;i<line.length;i++){ var c=line[i]; if(c==='"'){ inq=!inq; /* non append quote to cur */ } else if(c===delim && !inq){ res.push(cur); cur=''; } else { cur+=c; } } res.push(cur); return res; }
@@ -174,53 +309,39 @@
   // Ensure an 'Agenda' link exists in the sidebar above 'Listini'
   function ensureAgendaLink(){
     try{
+      var p = (window.location && window.location.pathname) || '';
+      if(p.indexOf('/preventivatore/mirror/fv/contratto-fotovoltaico')===0 || p.indexOf('/preventivatore/mirror/i-miei-preventivi')===0){ return; }
       var side = document.getElementById('sidenav');
       if(!side) return;
       // Reuse existing LI if present; ensure correct placement before Listini
       var existingLi = side.querySelector('li.agenda-link');
-      var agendaA = side.querySelector('a[href="/preventivatore/mirror/agenda"], a[href="/preventivatore/mirror/agenda.html"], li.agenda-link > a');
+      var agendaA = side.querySelector('a[href="/preventivatore/mirror/agenda-page.html"], a[href="/preventivatore/mirror/agenda"], a[href="/preventivatore/mirror/agenda.html"], li.agenda-link > a');
       if(!existingLi){
         var li = document.createElement('li');
         li.className = 'agenda-link';
-        li.innerHTML = '<a href="#" data-agenda-url="/preventivatore/mirror/agenda"><i class="material-icons left">event</i> Agenda</a>';
+        li.innerHTML = '<a href="/preventivatore/mirror/agenda-page.html"><i class="material-icons left">event</i> Agenda</a>';
         existingLi = li;
       }
       // Retrofit click handler every time to be safe
       try{
         var a = (existingLi && existingLi.querySelector('a')) || agendaA;
         if(a){
-          a.dataset.agendaUrl = a.getAttribute('data-agenda-url') || a.getAttribute('href') || '/preventivatore/mirror/agenda';
-          a.setAttribute('href','#');
-          if(!a.__agendaBound){
-            a.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var ok=window.wireAgendaInlineOpen? wireAgendaInlineOpen(this) : false; if(!ok){ window.location.href=this.dataset.agendaUrl||'/preventivatore/mirror/agenda.html'; } }, true);
-            a.__agendaBound = true;
-          }
+          a.setAttribute('href','/preventivatore/mirror/agenda-page.html');
+          a.removeAttribute('onclick');
         }
       }catch(_){ }
-      // Primary: insert before 'Listini' item (robust selector)
-      var listiniA = side.querySelector('a[href="/preventivatore/mirror/listini.html"], a[href="/preventivatore/mirror/listini"], a[href^="/preventivatore/mirror/listini?"]');
-      if(!listiniA){
-        // try by link text contains 'Listini'
-        var cand = Array.from(side.querySelectorAll('a')).find(function(x){ return (x.textContent||'').trim().toLowerCase().indexOf('listini')>-1; });
-        if(cand) listiniA = cand;
-      }
-      if(listiniA && listiniA.parentNode){
-        listiniA.parentNode.parentNode.insertBefore(existingLi, listiniA.parentNode);
+      // Position as the LAST visible menu item to maximize visibility across variants
+      try{
+        // Remove duplicates to avoid multiple items
+        Array.from(side.querySelectorAll('li.agenda-link')).forEach(function(n){ if(n!==existingLi && n.parentNode){ n.parentNode.removeChild(n); } });
+      }catch(_){ }
+      // Append after the last <li> in the sidenav
+      var allLis = side.querySelectorAll('li');
+      if(allLis && allLis.length){
+        var lastLi = allLis[allLis.length-1];
+        lastLi.parentNode.insertBefore(existingLi, lastLi.nextSibling);
       } else {
-        // Fallback: inject right after the profile block, or as the very first LI
-        try{
-          // Remove duplicates to avoid multiple items
-          Array.from(side.querySelectorAll('li.agenda-link')).forEach(function(n){ if(n!==existingLi && n.parentNode===side){ n.parentNode.removeChild(n); } });
-        }catch(_){ }
-        var profile = side.querySelector('.sidenav-profile-wrap');
-        if(profile && profile.parentNode===side){
-          var after = profile.nextElementSibling; // may be first LI or null
-          side.insertBefore(existingLi, after || side.firstChild);
-        } else {
-          var firstLi = side.querySelector('li');
-          if(firstLi && firstLi.parentNode){ firstLi.parentNode.insertBefore(existingLi, firstLi); }
-          else { side.appendChild(existingLi); }
-        }
+        side.appendChild(existingLi);
       }
     }catch(_){ }
   }
@@ -263,16 +384,19 @@
         }catch(_){ }
         return true;
       }
-      // Delegato: intercetta click ovunque (sidebar e non) sul link Agenda
-      document.addEventListener('click', function(e){
-        var closest = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-        if(!closest) return;
-        var hrefAttr = closest.getAttribute('href');
-        var hrefAbs = closest.href;
-        if(!(isAgendaHref(hrefAttr) || isAgendaHref(hrefAbs))) return;
-        var handled = window.wireAgendaInlineOpen(closest);
-        if(handled){ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation && e.stopImmediatePropagation(); }
-      }, true);
+      // Delegato per apertura inline: attivo solo se AUTH_INLINE_AGENDA===true
+      try{ if(typeof window !== 'undefined' && window.AUTH_INLINE_AGENDA){
+        document.addEventListener('click', function(e){
+          var closest = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+          if(!closest) return;
+          var hrefAttr = closest.getAttribute('href');
+          var hrefAbs = closest.href;
+          var tgt = hrefAttr || hrefAbs || '';
+          if(!isAgendaHref(tgt)) return;
+          try{ inlineOpenAgenda('/preventivatore/mirror/agenda'); }catch(_){ }
+          e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation && e.stopImmediatePropagation();
+        }, true);
+      } }catch(_){ }
     }catch(_){ }
   }
 
@@ -365,15 +489,51 @@
         bindExplicitLogout();
         renderSidebarUser();
         ensureAgendaLink();
+        ensureTopbarAgenda();
+        ensureFloatingAgenda();
         wireAgendaInline();
         setupSidebarObservers();
+        setupTopbarObservers();
         // Timed retries: some pages rebuild sidebar shortly after load
         try{
-          [150, 400, 1000, 2000].forEach(function(ms){ setTimeout(function(){ try{ ensureAgendaLink(); }catch(_){ } }, ms); });
+          [150, 400, 1000, 2000, 3000, 5000].forEach(function(ms){ setTimeout(function(){ try{ ensureAgendaLink(); ensureTopbarAgenda(); ensureFloatingAgenda(); setupTopbarObservers(); }catch(_){ } }, ms); });
         }catch(_){ }
         injectClearSessionButton();
       }
     }catch(_){ injectClearSessionButton(); }
   }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bootUI); } else { bootUI(); }
+})();
+
+// Global: robust download handler to preserve filename and handle spazi/accenti
+(function(){
+  async function downloadBlob(url, filename){
+    const res = await fetch(url, { credentials:'same-origin' });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    const objUrl = URL.createObjectURL(blob);
+    link.href = objUrl;
+    link.download = filename || '';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function(){ URL.revokeObjectURL(objUrl); link.remove(); }, 0);
+  }
+  function fileNameFromUrl(u){ try{ var p=new URL(u, window.location.origin).pathname; var n=p.substring(p.lastIndexOf('/')+1); return decodeURIComponent(n); }catch(_){ return ''; } }
+  try{
+    document.addEventListener('click', function(ev){
+      var a = ev.target && ev.target.closest && ev.target.closest('a[download]');
+      if(!a) return;
+      try{
+        var href = a.getAttribute('href') || a.href; if(!href) return;
+        var enc = encodeURI(href);
+        var fname = a.getAttribute('download') || fileNameFromUrl(href);
+        ev.preventDefault(); ev.stopPropagation();
+        downloadBlob(enc, fname).catch(function(){
+          // Fallback: open encoded link in same tab
+          try{ window.location.href = enc; }catch(_){ }
+        });
+      }catch(_){ }
+    }, true);
+  }catch(_){ }
 })();

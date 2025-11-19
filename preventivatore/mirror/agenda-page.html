@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <title>Agenda</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="/logo.png"/>
+  <link rel="stylesheet" href="/preventivatore/assets/fonts/css/fonts-4615247307143386908.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/fonts/css/fonts-9205542499395909428.css"/>
+  <meta name="theme-color" content="#004da1"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/wizard.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/nouislider.min.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/materialize.min.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/materialize-fix.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/bootstrap-scope.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/jquery.dataTables.min.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/datatables.min.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/fixedHeader.dataTables.min.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/fonts/css/fonts-5646924855556283803.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/b.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/fonts/css/fonts-4793446121656594806.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/f.css"/>
+  <link rel="stylesheet" href="/preventivatore/assets/share/css/media-queries.css"/>
+  <script src="/preventivatore/assets/share/js/jquery-1.7.2.min.js"></script>
+  <script src="/preventivatore/assets/share/js/jquery-ui-1.8.18.min.js"></script>
+  <script src="/preventivatore/assets/share/js/jquery.dataTables.min.js"></script>
+  <script src="/preventivatore/assets/share/js/datatables.min.js"></script>
+  <script src="/preventivatore/assets/share/js/dataTables.fixedHeader.min.js"></script>
+  <script src="/preventivatore/assets/share/js/materialize.min.js"></script>
+  <script src="/preventivatore/assets/share/js/select.js"></script>
+  <script src="/preventivatore/assets/share/js/nouislider.js"></script>
+  <script src="/preventivatore/assets/share/js/global-utils.js"></script>
+  <script src="/preventivatore/assets/share/js/fc-admin_ready.js"></script>
+  <script src="/preventivatore/assets/share/js/ricarica.js"></script>
+  <script src="/preventivatore/assets/share/js/note.js"></script>
+  <script src="/preventivatore/assets/share/js/contratto_fotovoltaico.js"></script>
+  <script src="/preventivatore/assets/app/auth.js?v=agenda-side-18"></script>
+  <link rel="stylesheet" href="/preventivatore/mirror/custom.css"/>
+</head>
+<body class="Contratto fv lang_it">
+  <script>(function(){try{var p=location.pathname;if(p.indexOf('/preventivatore/mirror/share.unionenergia.it/')===0){var np=p.replace('/preventivatore/mirror/share.unionenergia.it/','/preventivatore/mirror/');location.replace(np+location.search+location.hash);return;}if(p==='/preventivatore/mirror/agenda-page'){location.replace(p+'.html'+location.search+location.hash);return;}}catch(e){}})();
+  (function(){function boot(){try{if(window.Auth){ if(!Auth.require()) return; Auth.renderSidebarUser(); }}catch(_){}} if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();})();</script>
+  <header class="r7">
+    <nav class="top-nav"><div class="padding-container"><div class="nav-wrapper">
+      <ul class="left" id="top_nav" style="width:100%">
+        <li class="hide-mobile esci right-li" style="float:right;"><a href="/preventivatore/mirror/"><i class="material-icons">logout</i><span>Esci</span></a></li>
+        <li class="hide-mobile right-li top-agenda" style="float:right;"><a href="/preventivatore/mirror/agenda-page.html" style="color:#fff !important;"><i class="material-icons">event</i><span>Agenda</span></a></li>
+      </ul>
+    </div></div></nav>
+  </header>
+  <ul class="sidenav" id="sidenav">
+    <div class="sidenav-profile-wrap">
+      <img class="logo" src="/logo.png" alt="" title=""/>
+      <div class="avatar-wrap"></div>
+      <div class="profile-link-wrap"></div>
+    </div>
+    <li class=""><a href="/preventivatore/mirror/fv/contratto-fotovoltaico.html"><i class="material-icons left">roofing</i>Contratto</a></li>
+    <li><a href="/preventivatore/mirror/i-miei-preventivi.html"><i class="material-icons">folder</i> I miei preventivi</a></li>
+    <li><div class="divider"></div></li>
+    <hr/>
+    <li class="documenti-utili-union-smart-agenti"><a href="/preventivatore/mirror/listini.html"><img class="u-icon" src="/preventivatore/doc_icon.png" alt="Documento" style="width:20px; height:20px"/> Listini</a></li>
+    <li class="documenti-utili-union-smart"><a href="/preventivatore/mirror/schede-prodotti.html"><img class="u-icon" src="/preventivatore/doc_icon.png" alt="Documento" style="width:20px; height:20px"/> Schede Prodotti</a></li>
+    <li class="documenti-utili-reddito-energetico"><a href="/preventivatore/mirror/incentivi.html"><img class="u-icon" src="/preventivatore/doc_icon.png" alt="Documento" style="width:20px; height:20px"/> Incentivi</a></li>
+    <li class="documenti-utili-union-smart-finanziamenti"><a href="/preventivatore/mirror/finanziamenti.html"><img class="u-icon" src="/preventivatore/doc_icon.png" alt="Documento" style="width:20px; height:20px"/> Finanziamenti</a></li>
+    <li class="documenti-utili-union-smart-formazione-agenti"><a href="/preventivatore/mirror/formazione-agenti.html"><img class="u-icon" src="/preventivatore/doc_icon.png" alt="Documento" style="width:20px; height:20px"/> Formazione Agenti</a></li>
+    <li class="documenti-utili-union-smart-marketing-agenti"><a href="/preventivatore/mirror/marketing.html"><img class="u-icon" src="/preventivatore/doc_icon.png" alt="Documento" style="width:20px; height:20px"/> Marketing</a></li>
+  </ul>
+  <span id="sidenav-resize">
+    <i class="material-icons left">keyboard_arrow_left</i>
+    <i class="material-icons right">keyboard_arrow_right</i>
+  </span>
+  <div id="wrap">
+    <section class="section padding-container white-bg">
+      <div class="row">
+        <div class="col s12">
+          <iframe src="/preventivatore/mirror/agenda?v=inline" style="width:100%;height:85vh;border:0;border-radius:8px;background:#fff;"></iframe>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

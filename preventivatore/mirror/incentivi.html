@@ -161,7 +161,8 @@
     </div>
   </li>
 </ul>
- </div></section></div>
+  </div></section></div>
+ <script>(function(){try{var top=document.getElementById('top_nav'); if(!top) return; if(top.querySelector('li.top-agenda')) return; var esci=top.querySelector('li.hide-mobile.esci.right-li'); var li=document.createElement('li'); li.className='hide-mobile right-li top-agenda'; var a=document.createElement('a'); a.href='/preventivatore/mirror/agenda'; a.style.color='#fff'; a.style.setProperty('color','#fff','important'); a.innerHTML='<i class="material-icons">event</i><span>Agenda</span>'; li.appendChild(a); if(esci&&esci.parentNode){ esci.parentNode.insertBefore(li, esci.nextSibling); } else { top.appendChild(li); } }catch(_){}})();</script>
  <script>(function(){ try{ var elems=document.querySelectorAll('.collapsible'); if(window.M && M.Collapsible){ M.Collapsible.init(elems,{accordion:false}); } }catch(e){} })();</script>
  <script>
  (function(){
@@ -169,18 +170,29 @@
      setTimeout(function(){ try{ if(window.ensureAgendaLink){ ensureAgendaLink(); } }catch(_){ } }, 250);
    }
    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', kick); } else { kick(); }
-   // Resilient download: if link fails (spaces/accenti), retry with encodeURI
-   document.addEventListener('click', function(e){
-     var a = e.target && e.target.closest && e.target.closest('#incentivi-menu a[download]');
-     if(!a) return;
-     try{
-       var href = a.getAttribute('href'); if(!href) return;
-       fetch(href, { method:'HEAD' }).then(function(res){
-         if(!res.ok){ var enc = encodeURI(href); if(enc!==href){ a.setAttribute('href', enc); }
-         }
-       }).catch(function(){ var enc = encodeURI(href); if(enc!==href){ a.setAttribute('href', enc); } });
-     }catch(_){ }
-   }, true);
+   // Robust PDF download: fetch as Blob and force .pdf filename, try per-segment encoding on failure
+  document.addEventListener('click', function(e){
+    var a = e.target && e.target.closest && e.target.closest('#incentivi-menu a[download]');
+    if(!a) return;
+    try{
+      var href = a.getAttribute('href') || a.href; if(!href) return;
+      var enc = encodeURI(href);
+      function encodePerSegment(u){ try{ var url=new URL(u, location.origin); var seg=url.pathname.split('/').map(function(s){ return encodeURIComponent(s); }).join('/'); url.pathname=seg; return url.toString(); }catch(_){ return encodeURI(u); } }
+      var fname = a.getAttribute('download') || (function(u){ try{ var p=new URL(u, location.origin).pathname; var n=p.substring(p.lastIndexOf('/')+1); return decodeURIComponent(n); }catch(_){ return ''; } })(href);
+      if(!/\.pdf$/i.test(fname)) fname = fname.replace(/\.[^./\\]+$/,'') + '.pdf';
+      e.preventDefault(); e.stopPropagation();
+      function doFetch(u){
+        return fetch(u, { credentials:'same-origin' }).then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.blob(); }).then(function(blob){
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement('a'); link.href = url; link.download = fname;
+          document.body.appendChild(link); link.click(); setTimeout(function(){ URL.revokeObjectURL(url); link.remove(); }, 0);
+        });
+      }
+      doFetch(enc).catch(function(){ var enc2 = encodePerSegment(href); return doFetch(enc2); }).catch(function(){
+        try{ window.location.href = encodePerSegment(href); }catch(_){ }
+      });
+    }catch(_){ }
+  }, true);
  })();
  </script>
 <!-- version: incentivi v=2025-10-31-4 -->

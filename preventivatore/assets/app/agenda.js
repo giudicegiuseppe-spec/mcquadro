@@ -97,7 +97,11 @@
     }
   }
 
-  async function listAll(){ return await fetchJSON(API, { headers: headers() }); }
+  async function listAll(){
+    var url = API;
+    try{ if(isElevated()){ url = API + '?all=1'; } }catch(_){ }
+    return await fetchJSON(url, { headers: headers() });
+  }
 
   function renderRow(rec){
     var tr = document.createElement('tr');

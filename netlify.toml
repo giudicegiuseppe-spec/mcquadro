@@ -43,6 +43,25 @@
   from = "/preventivatore/mirror/agenda"
   to = "/preventivatore/mirror/agenda.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/preventivatore/mirror/listini"
+  to = "/preventivatore/mirror/listini.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/preventivatore/mirror/schede-prodotti"
+  to = "/preventivatore/mirror/schede-prodotti.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/preventivatore/mirror/finanziamenti"
+  to = "/preventivatore/mirror/finanziamenti.html"
+  status = 200
+  force = true
 
 [[headers]]
   for = "/preventivatore/mirror/*"

@@ -64,7 +64,7 @@
     
     
 <script src="/preventivatore/assets/share/js/contratto_fotovoltaico.js" type="text/javascript"></script>
-<script src="/preventivatore/assets/app/auth.js?v=agenda-side-16"></script>
+<script src="/preventivatore/assets/app/auth.js?v=agenda-side-18"></script>
 <link href="/preventivatore/mirror/custom.css" rel="stylesheet"/><style id="selectionModeStyle">
 .selection-mode-toggle{position:fixed;bottom:16px;right:16px;z-index:9999;background:#ff5252;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2); user-select:none}
 .selection-mode-toggle.active{background:#d32f2f}
@@ -217,24 +217,36 @@
     </div>
   </li>
 </ul>
-</div></section></div>
+ </div></section></div>
+ <script>(function(){try{var top=document.getElementById('top_nav'); if(!top) return; if(top.querySelector('li.top-agenda')) return; var esci=top.querySelector('li.hide-mobile.esci.right-li'); var li=document.createElement('li'); li.className='hide-mobile right-li top-agenda'; li.style.cssText='float:right;'; var a=document.createElement('a'); a.href='/preventivatore/mirror/agenda-page.html'; a.style.color='#fff'; a.style.setProperty('color','#fff','important'); a.innerHTML='<i class="material-icons">event</i><span>Agenda</span>'; li.appendChild(a); if(esci&&esci.parentNode){ esci.parentNode.insertBefore(li, esci.nextSibling); } else { top.appendChild(li); } }catch(_){}})();</script>
 <script>
 (function(){
   function kick(){ try{ if(window.ensureAgendaLink){ ensureAgendaLink(); } }catch(_){ }
     setTimeout(function(){ try{ if(window.ensureAgendaLink){ ensureAgendaLink(); } }catch(_){ } }, 250);
   }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', kick); } else { kick(); }
-  // Resilient download: if link fails due to encoding, retry with encodeURI
+  // Robust PDF download: fetch as Blob and force .pdf filename, try per-segment encoding on failure
   document.addEventListener('click', function(e){
-    var a = e.target && e.target.closest && e.target.closest('#schede-prodotti a[download]');
+    var a = e.target && e.target.closest && e.target.closest('a[download]');
     if(!a) return;
     try{
-      var href = a.getAttribute('href'); if(!href) return;
-      // try HEAD quickly, if 404 then switch to encoded
-      fetch(href, { method:'HEAD' }).then(function(res){
-        if(!res.ok){ var enc = encodeURI(href); if(enc!==href){ a.setAttribute('href', enc); }
-        }
-      }).catch(function(){ var enc = encodeURI(href); if(enc!==href){ a.setAttribute('href', enc); } });
+      var href = a.getAttribute('href') || a.href; if(!href) return;
+      var enc = encodeURI(href);
+      function encodePerSegment(u){ try{ var url=new URL(u, location.origin); var seg=url.pathname.split('/').map(function(s){ return encodeURIComponent(s); }).join('/'); url.pathname=seg; return url.toString(); }catch(_){ return encodeURI(u); } }
+      var fname = a.getAttribute('download') || (function(u){ try{ var p=new URL(u, location.origin).pathname; var n=p.substring(p.lastIndexOf('/')+1); return decodeURIComponent(n); }catch(_){ return ''; } })(href);
+      if(!/\.pdf$/i.test(fname)) fname = fname.replace(/\.[^./\\]+$/,'') + '.pdf';
+      e.preventDefault(); e.stopPropagation();
+      function doFetch(u){
+        return fetch(u, { credentials:'same-origin' }).then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.blob(); }).then(function(blob){
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement('a'); link.href = url; link.download = fname;
+          document.body.appendChild(link); link.click(); setTimeout(function(){ URL.revokeObjectURL(url); link.remove(); }, 0);
+        });
+      }
+      doFetch(enc).catch(function(){ var enc2 = encodePerSegment(href); return doFetch(enc2); }).catch(function(){
+        // Final fallback: navigate to encoded URL
+        try{ window.location.href = encodePerSegment(href); }catch(_){ }
+      });
     }catch(_){ }
   }, true);
 })();

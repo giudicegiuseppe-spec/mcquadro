@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <title>Incentivi TEST</title>
+  <title>Incentivi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="icon" type="image/png" href="/logo.png"/>
   <link rel="stylesheet" href="/preventivatore/assets/fonts/css/fonts-4615247307143386908.css"/>
@@ -33,7 +33,7 @@
   <script src="/preventivatore/assets/share/js/ricarica.js"></script>
   <script src="/preventivatore/assets/share/js/note.js"></script>
   <script src="/preventivatore/assets/share/js/contratto_fotovoltaico.js"></script>
-  <script src="/preventivatore/assets/app/auth.js"></script>
+  <script src="/preventivatore/assets/app/auth.js?v=agenda-side-18"></script>
   <link rel="stylesheet" href="/preventivatore/mirror/custom.css?v=2025-10-31-test"/>
   <style>
     /* Inline overrides per test anti-cache */
@@ -50,9 +50,11 @@
     <nav class="top-nav"><div class="padding-container"><div class="nav-wrapper">
       <ul class="left" id="top_nav" style="width:100%">
         <li class="hide-mobile esci right-li" style="float:right;"><a href="/preventivatore/mirror/"><i class="material-icons">logout</i><span>Esci</span></a></li>
+        <li class="hide-mobile right-li top-agenda" style="float:right;"><a href="/preventivatore/mirror/agenda-page.html" style="color:#fff !important;"><i class="material-icons">event</i><span>Agenda</span></a></li>
       </ul>
     </div></div></nav>
   </header>
+  <script>(function(){try{var top=document.getElementById('top_nav'); if(!top) return; if(top.querySelector('li.top-agenda')) return; var esci=top.querySelector('li.hide-mobile.esci.right-li'); var li=document.createElement('li'); li.className='hide-mobile right-li top-agenda'; li.style.cssText='float:right;'; var a=document.createElement('a'); a.href='/preventivatore/mirror/agenda-page.html'; a.style.color='#fff'; a.style.setProperty('color','#fff','important'); a.innerHTML='<i class=\"material-icons\">event</i><span>Agenda</span>'; li.appendChild(a); if(esci&&esci.parentNode){ esci.parentNode.insertBefore(li, esci.nextSibling); } else { top.appendChild(li); } }catch(_){}})();</script>
   <ul class="sidenav" id="sidenav">
     <div class="sidenav-profile-wrap">
       <img class="logo" src="/logo.png" alt="" title=""/>
@@ -78,13 +80,13 @@
     <section class="section-bg title">
       <div class="title-wrap">
         <a class="hide_please home-link" href="/preventivatore/mirror/incentivi-test.html"><img class="page-title-logo" src="/logo.png" alt=""/></a>
-        <h1 class="padding-container">Incentivi TEST</h1>
+        <h1 class="padding-container">Incentivi</h1>
       </div>
     </section>
 
     <section class="section padding-container white-bg">
       <div class="row">
-        <div class="card-panel" style="border-radius:10px; margin-bottom:12px; background:#e3f2fd; color:#0d47a1;">Build Incentivi TEST: 2025-10-31</div>
+        <div class="card-panel" style="display:none; border-radius:10px; margin-bottom:12px; background:#e3f2fd; color:#0d47a1;">Build Incentivi TEST: 2025-10-31</div>
 
         <ul id="incentivi-menu" class="collapsible expandable" style="border-radius:12px; overflow:hidden;">
           <li>
@@ -119,6 +121,31 @@
   </div>
   <script>
     (function(){ try{ var elems=document.querySelectorAll('.collapsible'); if(window.M && M.Collapsible){ M.Collapsible.init(elems,{accordion:false}); } }catch(e){} })();
+    (function(){
+      // Robust PDF download for Incentivi TEST
+      document.addEventListener('click', function(e){
+        var a = e.target && e.target.closest && e.target.closest('#incentivi-menu a[download]');
+        if(!a) return;
+        try{
+          var href = a.getAttribute('href') || a.href; if(!href) return;
+          var enc = encodeURI(href);
+          function encodePerSegment(u){ try{ var url=new URL(u, location.origin); var seg=url.pathname.split('/').map(function(s){ return encodeURIComponent(s); }).join('/'); url.pathname=seg; return url.toString(); }catch(_){ return encodeURI(u); } }
+          var fname = a.getAttribute('download') || (function(u){ try{ var p=new URL(u, location.origin).pathname; var n=p.substring(p.lastIndexOf('/')+1); return decodeURIComponent(n); }catch(_){ return ''; } })(href);
+          if(!/\.pdf$/i.test(fname)) fname = fname.replace(/\.[^./\\]+$/,'') + '.pdf';
+          e.preventDefault(); e.stopPropagation();
+          function doFetch(u){
+            return fetch(u, { credentials:'same-origin' }).then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.blob(); }).then(function(blob){
+              var url = URL.createObjectURL(blob);
+              var link = document.createElement('a'); link.href = url; link.download = fname;
+              document.body.appendChild(link); link.click(); setTimeout(function(){ URL.revokeObjectURL(url); link.remove(); }, 0);
+            });
+          }
+          doFetch(enc).catch(function(){ var enc2 = encodePerSegment(href); return doFetch(enc2); }).catch(function(){
+            try{ window.location.href = encodePerSegment(href); }catch(_){ }
+          });
+        }catch(_){ }
+      }, true);
+    })();
   </script>
 </body>
 </html>

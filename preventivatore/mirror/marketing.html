@@ -67,7 +67,7 @@
     
     
 <script src="/preventivatore/assets/share/js/contratto_fotovoltaico.js" type="text/javascript"></script>
-<script src="/preventivatore/assets/app/auth.js?v=agenda-side-16"></script>
+<script src="/preventivatore/assets/app/auth.js?v=agenda-side-18"></script>
 <link href="/preventivatore/mirror/custom.css?v=2025-11-01-5" rel="stylesheet"/>
 <style>
   /* Strong overrides: buttons text always white inside Marketing page */
@@ -91,6 +91,7 @@
 <ul class="left" id="top_nav" style="width: 100%;">
 <!--<li><a href="#" data-target="sidenav" class="sidenav-trigger"><i class="material-icons menu-icon">menu</i><span>Menu</span></a></li>-->
 <li class="hide-mobile esci right-li" style="float: right;"><a href="/preventivatore/mirror/"><i class="material-icons">logout</i><span>Esci</span></a></li>
+<li class="hide-mobile right-li top-agenda" style="float: right;"><a href="/preventivatore/mirror/agenda-page.html" style="color:#fff !important;"><i class="material-icons">event</i><span>Agenda</span></a></li>
 <!--
                     <li style="float: right; width: 1px; height: 22px; vertical-align: middle; margin-top: 13px; background: #fff;"><span></span></li>
                     <li style="float: right; color: #fff;" class="welcome"><a href="#" style="cursor: normal;">Benvenuto SAMANTHA (Agente)</a></li>-->
@@ -195,6 +196,7 @@
     </div>
   </div>
 
-</div></section></div>
+ </div></section></div>
+ <script>(function(){try{var top=document.getElementById('top_nav'); if(!top) return; if(top.querySelector('li.top-agenda')) return; var esci=top.querySelector('li.hide-mobile.esci.right-li'); var li=document.createElement('li'); li.className='hide-mobile right-li top-agenda'; var a=document.createElement('a'); a.href='/preventivatore/mirror/agenda-page.html'; a.innerHTML='<i class="material-icons">event</i><span>Agenda</span>'; li.appendChild(a); if(esci&&esci.parentNode){ esci.parentNode.insertBefore(li, esci); } else { top.appendChild(li); } }catch(_){}})();</script>
 <!-- version: marketing final 2025-11-03 -->
 </body></html>
