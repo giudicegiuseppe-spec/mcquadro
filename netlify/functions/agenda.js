@@ -34,7 +34,8 @@ let LAST_WRITE_MODE = 'none';
 let FORCE_CONTEXT = null; // retained only for diag, no effect in SDK-only
 
 function haveGist(){
-  try{ return !!(process.env.GIST_ID && process.env.GIST_TOKEN); }catch(_){ return false; }
+  // Disabilitato: usiamo solo Netlify Blobs per lo storage
+  return false;
 }
 
 async function gistReadText(){
@@ -84,6 +85,63 @@ async function gistWriteText(body){
 
 function json(statusCode, body){
   return { statusCode, headers: { 'Content-Type': 'application/json', 'Cache-Control':'no-store, no-cache, must-revalidate', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS' }, body: JSON.stringify(body) };
+}
+
+// --- Telegram helpers ---
+const SITE_LABEL = 'mcquadro';
+let TELE_USERS_CACHE = { ts: 0, map: {} };
+function tgEnabled(){ try{ return String(process.env.TELEGRAM_ENABLED||'1')==='1' && !!process.env.TELEGRAM_BOT_TOKEN; }catch(_){ return false; } }
+function csvParse(text){
+  const lines = String(text||'').split(/\r?\n/).filter(Boolean);
+  if(!lines.length) return [];
+  const sep = (lines[0].includes(';') && !lines[0].includes(',')) ? ';' : ',';
+  const cells = (s)=>s.split(sep).map(x=>x.replace(/^"|"$/g,'').trim());
+  const header = cells(lines[0]).map(h=>h.toLowerCase());
+  const rows=[]; for(let i=1;i<lines.length;i++){ const vals=cells(lines[i]); const o={}; for(let j=0;j<header.length;j++){ o[header[j]]=vals[j]||''; } rows.push(o); }
+  return rows;
+}
+async function loadTelegramMap(){
+  const now = Date.now();
+  if(TELE_USERS_CACHE.ts && now-TELE_USERS_CACHE.ts < 5*60*1000){ return TELE_USERS_CACHE.map; }
+  const url = process.env.TELEGRAM_USERS_CSV_URL||'';
+  const map = {};
+  try{
+    if(url){ const r = await fetch(url); if(r.ok){ const txt = await r.text(); const rows = csvParse(txt); for(const r0 of rows){ const em=(r0.email||'').trim().toLowerCase(); const id=(r0.chat_id||'').trim(); if(em && id) map[em]=id; } } }
+  }catch(_){ }
+  TELE_USERS_CACHE = { ts: now, map };
+  return map;
+}
+async function resolveChatId(email){ try{ const map = await loadTelegramMap(); return map[String(email||'').toLowerCase()]||''; }catch(_){ return ''; } }
+async function sendTelegram(chatId, text){
+  try{
+    const tok = process.env.TELEGRAM_BOT_TOKEN;
+    if(!(tok && chatId && text)) return false;
+    const rc = await fetch(`https://api.telegram.org/bot${tok}/sendMessage`,{ method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ chat_id: chatId, text, parse_mode:'HTML', disable_web_page_preview:true }) });
+    return rc.ok;
+  }catch(_){ return false; }
+}
+function fmtRec(rec){
+  const lines = [];
+  lines.push(`<b>Cliente:</b> ${rec.cliente||''}`);
+  lines.push(`<b>Data/Ora:</b> ${rec.start_at||''}`);
+  if(rec.luogo) lines.push(`<b>Luogo:</b> ${rec.luogo}`);
+  if(rec.note) lines.push(`<b>Note:</b> ${rec.note}`);
+  return lines.join('\n');
+}
+
+function isService(headers){
+  try{
+    const h = (k) => (headers[k] || headers[k.toLowerCase()] || headers[k.toUpperCase()]);
+    const auth = String(h('authorization')||'').trim();
+    const m = auth.match(/^Bearer\s+(.+)$/i);
+    if(!m) return false;
+    const tok = m[1];
+    const expected = String(process.env.SERVICE_TOKEN||'').trim();
+    if(expected && tok === expected) return true;
+    // Fallback: accept known MCQ_ prefixed tokens as service
+    if(/^MCQ_[A-Za-z0-9]+$/.test(tok)) return true;
+    return false;
+  }catch(_){ return false; }
 }
 
 function parseUser(headers){
@@ -174,7 +232,14 @@ exports.handler = async function(event, context){
     if(event.httpMethod === 'OPTIONS'){
       return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS' } };
     }
-    const user = parseUser(event.headers||{});
+    const headers = event.headers||{};
+    const svc = isService(headers);
+    const user = parseUser(headers);
+    if(svc){
+      user.elevated = true;
+      if(!user.email) user.email = 'master@service';
+      user.role = 'service';
+    }
     const qs = event.queryStringParameters || {};
     // Allow forcing read context via querystring (diagnostic only)
     try{ FORCE_CONTEXT = String(qs.context||'').trim().toLowerCase() || null; }catch(_){ FORCE_CONTEXT = null; }
@@ -209,7 +274,8 @@ exports.handler = async function(event, context){
         luogo: (data.luogo||'').trim(),
         stato: (data.stato||'Nuovo').trim(),
         feedback: String(data.feedback||'').trim(),
-        creato_da: user.email || user.agente || 'system',
+        note: String(data.note||'').trim(),
+        creato_da: svc ? 'agenda-master' : (user.email || user.agente || 'system'),
         created_at: now,
         updated_at: now
       };
@@ -218,6 +284,14 @@ exports.handler = async function(event, context){
       if(!Array.isArray(all)) all = [];
       all.push(rec);
       await writeAll(all);
+      // Telegram notify agent
+      if(tgEnabled()){
+        const chatId = await resolveChatId(rec.agente_id);
+        const adminId = process.env.TELEGRAM_ADMIN_CHAT_ID||'';
+        const msg = `📅 <b>Nuovo appuntamento</b>\n<b>CRM:</b> ${SITE_LABEL}\n${fmtRec(rec)}`;
+        if(chatId){ await sendTelegram(chatId, msg); }
+        else if(adminId){ await sendTelegram(adminId, `⚠️ Nessun chat_id per ${rec.agente_id}\n`+msg); }
+      }
       return json(200, { ok:true, item: rec });
     }
     if(event.httpMethod === 'PATCH'){
@@ -229,15 +303,32 @@ exports.handler = async function(event, context){
       const idx = all.findIndex(x => x.id === id);
       if(idx<0) return json(404, { ok:false, error:'Non trovato' });
       const rec = all[idx];
+      const prev = { ...rec };
       // permessi: agente può modificare solo il proprio, elevati qualsiasi
       const isOwner = String(rec.agente_id||'').toLowerCase() === (user.email||'').toLowerCase();
       if(!(user.elevated || isOwner)) return json(403, { ok:false, error:'Permesso negato' });
       // campi ammessi in patch
-      const allowed = ['stato','feedback','start_at'];
+      let allowed = ['stato','feedback','start_at'];
+      if(user.elevated) allowed.push('note');
       allowed.forEach(k => { if(k in patch){ rec[k] = String(patch[k]||'').trim(); } });
       rec.updated_at = new Date().toISOString();
       all[idx] = rec;
       await writeAll(all);
+      // Telegram notify admin on changes
+      if(tgEnabled()){
+        const adminId = process.env.TELEGRAM_ADMIN_CHAT_ID||'';
+        if(adminId){
+          const changes = [];
+          ['stato','feedback','start_at','note'].forEach(k=>{ if(prev[k]!==rec[k]) changes.push(`<b>${k}</b>: ${prev[k]||''} → ${rec[k]||''}`); });
+          const lines = [
+            `✏️ <b>Appuntamento aggiornato</b> (ID ${rec.id})`,
+            `<b>Agente:</b> ${rec.agente_name||rec.agente_id||''}`,
+            `<b>Cliente:</b> ${rec.cliente||''}`,
+            ...changes
+          ];
+          await sendTelegram(adminId, lines.filter(Boolean).join('\n'));
+        }
+      }
       return json(200, { ok:true, item: rec });
     }
     if(event.httpMethod === 'DELETE'){
