@@ -154,14 +154,14 @@ function parseUser(headers){
   return { role, email, agente, area_manager, elevated };
 }
 
-function newStore(){
+async function newStore(){
   if(!getStore) return null;
-  try{ return getStore(STORE_NAME); }catch(_){ return null; }
+  try{ return await getStore(STORE_NAME); }catch(_){ return null; }
 }
 
 async function readAll(){
   // Try SDK first
-  const store = newStore();
+  const store = await newStore();
   if(store && typeof store.get === 'function'){
     try{
       const data = await store.get(KEY, { type: 'json' });
@@ -177,7 +177,7 @@ async function readAll(){
   return [];
 }
 async function writeAll(arr){
-  const store = newStore();
+  const store = await newStore();
   const body = JSON.stringify(arr || []);
   if(store && typeof store.set === 'function'){
     await store.set(KEY, body, { contentType: 'application/json' });
