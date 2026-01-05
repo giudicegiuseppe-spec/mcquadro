@@ -235,6 +235,12 @@ exports.handler = async function(event, context){
     const headers = event.headers||{};
     const svc = isService(headers);
     const user = parseUser(headers);
+    // Debug auth context
+    console.log('MCQ agenda auth', {
+      method: event.httpMethod,
+      svc,
+      user: { role: user.role, email: user.email, elevated: user.elevated }
+    });
     if(svc){
       user.elevated = true;
       if(!user.email) user.email = 'master@service';
@@ -261,6 +267,7 @@ exports.handler = async function(event, context){
       return json(200, { ok:true, items: out, debug: dbg });
     }
     if(event.httpMethod === 'POST'){
+      console.log('MCQ POST auth check', { elevated: user.elevated });
       if(!user.elevated){ return json(403, { ok:false, error:'Permesso negato' }); }
       let data = {};
       try{ data = JSON.parse(event.body||'{}'); }catch(_){ }
@@ -306,6 +313,7 @@ exports.handler = async function(event, context){
       const prev = { ...rec };
       // permessi: agente può modificare solo il proprio, elevati qualsiasi
       const isOwner = String(rec.agente_id||'').toLowerCase() === (user.email||'').toLowerCase();
+      console.log('MCQ PATCH auth check', { elevated: user.elevated, isOwner });
       if(!(user.elevated || isOwner)) return json(403, { ok:false, error:'Permesso negato' });
       // campi ammessi in patch
       let allowed = ['stato','feedback','start_at'];
@@ -334,6 +342,7 @@ exports.handler = async function(event, context){
     if(event.httpMethod === 'DELETE'){
       const id = (event.queryStringParameters||{}).id || '';
       if(!id) return json(400, { ok:false, error:'ID mancante' });
+      console.log('MCQ DELETE auth check', { elevated: user.elevated });
       if(!user.elevated) return json(403, { ok:false, error:'Permesso negato' });
       const all = await readAll();
       const arr = all.filter(x => x.id !== id);
